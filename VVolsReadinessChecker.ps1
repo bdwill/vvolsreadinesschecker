@@ -69,13 +69,13 @@ add-content $logfile '----------------------------------------------------------
 #Will try to install PowerCLI with PowerShellGet if PowerCLI is not present.
 
 if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)) -and (!(get-Module -Name VMware.PowerCLI -ListAvailable))) {
-    if (Test-Path ‚ÄúC:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1‚Äù)
+    if (Test-Path  úC:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù)
     {
-      . ‚ÄúC:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1‚Äù |out-null
+        C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù | out-null
     }
-    elseif (Test-Path ‚ÄúC:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1‚Äù)
+    elseif (Test-Path  úC:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù)
     {
-        . ‚ÄúC:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1‚Äù |out-null
+        C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù | out-null
     }
     elseif (!(get-Module -Name VMware.PowerCLI -ListAvailable))
     {
@@ -89,11 +89,11 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
             {
                 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -Confirm:$false
             }
-            Install-Module -Name VMware.PowerCLI ‚ÄìScope CurrentUser -Confirm:$false -Force
+            Install-Module -Name VMware.PowerCLI  ìScope CurrentUser -Confirm:$false -Force"
         }
         else
         {
-            write-host ("PowerCLI could not automatically be installed because PowerShellGet is not present. Please install PowerShellGet or PowerCLI") -BackgroundColor Red
+            write-host "PowerCLI could not automatically be installed because PowerShellGet is not present. Please install PowerShellGet or PowerCLI" -BackgroundColor Red
             write-host "PowerShellGet can be found here https://www.microsoft.com/en-us/download/details.aspx?id=51451 or is included with PowerShell version 5"
             write-host "Terminating Script" -BackgroundColor Red
             return
@@ -101,7 +101,7 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
     }
     if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)) -and (!(get-Module -Name VMware.PowerCLI -ListAvailable)))
     {
-        write-host ("PowerCLI not found. Please verify installation and retry.") -BackgroundColor Red
+        write-host "PowerCLI not found. Please verify installation and retry." -BackgroundColor Red
         write-host "Terminating Script" -BackgroundColor Red
         return
     }
@@ -162,7 +162,7 @@ if ($clusterChoice -ieq "y")
     $ClusterForm = New-Object System.Windows.Forms.Form
     $ClusterForm.width = 300
     $ClusterForm.height = 100
-    $ClusterForm.Text = ‚ÄùChoose a Cluster‚Äù
+    $ClusterForm.Text =  ùChoose a Cluster ù
 
     $DropDown = new-object System.Windows.Forms.ComboBox
     $DropDown.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
@@ -230,27 +230,43 @@ catch
     write-host "Failed to connect to FlashArray" -BackgroundColor Red
     write-host $Error
     write-host "Terminating Script" -BackgroundColor Red
-    #add-content $logfile "Failed to connect to FlashArray"
-    #add-content $logfile $Error
-    #add-content $logfile "Terminating Script"
+    add-content $logfile "Failed to connect to FlashArray"
+    add-content $logfile $Error
+    add-content $logfile "Terminating Script"
     return
 }
 
 $errorHosts = @()
 write-host "Executing..."
+
+# Check vCenter version
+add-content $logfile "Working on the following vCenter: $($global:DefaultVIServers.name), version $($Global:DefaultVIServers.Version)"
+    add-content $logfile "-----------------------------------------------------------------------------------------------"
+    add-content $logfile "Checking vCenter Version"
+    add-content $logfile "-------------------------------------------------------"
+    if ($global:DefaultVIServers.version -le [Version]"6.5")
+    {
+        add-content $logfile "[****NEEDS ATTENTION****] vCenter 6.5 or later is required for VMware VVols."
+    }
+    else
+    {
+        add-content $logfile "Installed vCenter version, $($global:DefaultVIServers.version) supports VVols."
+    }
+
+# Iterating through each host in the vCenter
 add-content $logfile "Iterating through all ESXi hosts in cluster $clusterName..."
 $hosts | out-string | add-content $logfile
-
-#Iterating through each host in the vCenter
 foreach ($esx in $hosts)
 {
+    add-content $logfile ""
     add-content $logfile "***********************************************************************************************"
     add-content $logfile "**********************************NEXT ESXi HOST***********************************************"
     add-content $logfile "-----------------------------------------------------------------------------------------------"
     add-content $logfile "Working on the following ESXi host: $($esx.Name), version $($esx.Version)"
     add-content $logfile "-----------------------------------------------------------------------------------------------"
-    add-content $logfile "Checking ESXi Version."
+    add-content $logfile "Checking ESXi Version"
     add-content $logfile "-------------------------------------------------------"
+    # Check for ESXi version
     if ($esx.version -le [Version]"6.5")
     {
         add-content $logfile "[****NEEDS ATTENTION****] ESXi 6.5 or later is required for VMware VVols."
@@ -261,7 +277,7 @@ foreach ($esx in $hosts)
     }
     add-content $logfile ""
     add-content $logfile "-------------------------------------------------------"
-    add-content $logfile "Checking NTP settings."
+    add-content $logfile "Checking NTP settings"
     add-content $logfile "-------------------------------------------------------"
 
     # Check for NTP server configuration
@@ -273,6 +289,16 @@ foreach ($esx in $hosts)
     else
     {
         Add-Content $logfile "NTP server set to $($ntpServer)"
+        $testNetConnection = Test-NetConnection -ComputerName $ntpserver -informationlevel Quiet
+        if (!$testNetConnection)
+        {
+            Add-Content $logfile "[****NEEDS ATTENTION****] Could not communicate with NTP server. Check that it is valid and accessible."
+        
+        }
+        else
+        {
+            Add-Content $logfile "NTP server is valid and accessible."
+        }
     }
 
     # Check for NTP daemon running and enabled
@@ -289,23 +315,23 @@ foreach ($esx in $hosts)
 
     if ($ntpSettings."running" -contains "true")
     {
-        Add-Content $logfile "NTP daemon is running"
+        Add-Content $logfile "NTP daemon is running."
     }
     else
     {
-        Add-Content $logfile "[****NEEDS ATTENTION****] NTP daemon is not running"
+        Add-Content $logfile "[****NEEDS ATTENTION****] NTP daemon is not running."
     }
 }
 Disconnect-VIServer -server $vcenter
 
 # Check FlashArray's NTP Settings
-
+$arrayid = Get-PfaArrayId -Array $array
 add-content $logfile "***********************************************************************************************"
-add-content $logfile "**********************************FLASHARRAY***********************************************"
+add-content $logfile "**********************************FLASHARRAY***************************************************"
 add-content $logfile "-----------------------------------------------------------------------------------------------"
 add-content $logfile "Working on the following FlashArray: $($flasharray), Purity version $($arrayid.version)"
 add-content $logfile "-----------------------------------------------------------------------------------------------"
-add-content $logfile "Checking NTP Setting."
+add-content $logfile "Checking NTP Setting"
 add-content $logfile "-------------------------------------------------------"
 $flashArrayNTP = Get-PfaNtpServers -Array $array
 if (!$flashArrayNTP.ntpserver)
@@ -315,12 +341,23 @@ if (!$flashArrayNTP.ntpserver)
 else
 {
     Add-Content $logfile "FlashArray has the following NTP server configured: $($flasharrayNTP.ntpserver)"
+    [string]$ntpserver = $flashArrayNTP.ntpserver
+    $testNetConnection = Test-NetConnection -ComputerName $ntpserver -informationlevel Quiet
+    if (!$testNetConnection)
+    {
+        Add-Content $logfile "[****NEEDS ATTENTION****] Could not communicate with NTP server. Check that it is valid and accessible."
+        
+    }
+    else
+    {
+        Add-Content $logfile "NTP server is valid and accessible."
+    }
 }
-
+# Check Purity version
 add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking Purity Version."
 add-content $logfile "-------------------------------------------------------"
-$arrayid = Get-PfaArrayId -Array $array
+
 if ($arrayid.version -ge [Version]"5.0.9" -or $arrayid.version -ge [Version]"5.1.3")
 {
     Add-Content $logfile "Purity version supports VVols."
