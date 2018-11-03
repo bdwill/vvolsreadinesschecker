@@ -12,7 +12,7 @@ This script will:
 --Check for Purity 5.0.9+ or 5.1.3+
 --Check for vCenter 6.5+ and ESXI 6.5+ (6.5 Update 1 is highly recommended)
 --Check for communication from vCenter and ESXi hosts to FlashArray on TCP port 8084
---Check for NTP is configured and running on ESXi hosts and FlashArray
+--Check that a NTP server is set, valid, daemon running on ESXi hosts and FlashArray
 
 
 All information logged to a file.
@@ -69,11 +69,11 @@ add-content $logfile '----------------------------------------------------------
 #Will try to install PowerCLI with PowerShellGet if PowerCLI is not present.
 
 if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)) -and (!(get-Module -Name VMware.PowerCLI -ListAvailable))) {
-    if (Test-Path  úC:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù)
+    if (Test-Path C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù)
     {
         C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù | out-null
     }
-    elseif (Test-Path  úC:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù)
+    elseif (Test-Path C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù)
     {
         C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù | out-null
     }
@@ -107,16 +107,17 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
     }
 }
 set-powercliconfiguration -invalidcertificateaction "ignore" -confirm:$false |out-null
-if ((Get-PowerCLIVersion).build -lt 3737840)
+#if ((Get-PowerCLIVersion).build -lt 3737840)
+if ([Version](Get-Module -Name VMware.PowerCLI.version) -le [Version]"6.3.0.3737840")
 {
     write-host "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)" -BackgroundColor Red
     write-host "Found the following build number:"
-    write-host (Get-PowerCLIVersion).build
+    write-host Get-Module -Name VMware.PowerCLI.version
     write-host "Terminating Script" -BackgroundColor Red
     write-host "Get it here: https://my.vmware.com/group/vmware/get-download?downloadGroup=PCLI630R1"
     add-content $logfile "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)"
     add-content $logfile "Found the following build number:"
-    add-content $logfile (Get-PowerCLIVersion).build
+    add-content $logfile Get-Module -Name VMware.PowerCLI.version
     add-content $logfile "Terminating Script"
     add-content $logfile "Get it here: https://my.vmware.com/web/vmware/details?downloadGroup=PCLI650R1&productId=614"
     return
@@ -355,7 +356,7 @@ else
 }
 # Check Purity version
 add-content $logfile "-------------------------------------------------------"
-add-content $logfile "Checking Purity Version."
+add-content $logfile "Checking Purity Version"
 add-content $logfile "-------------------------------------------------------"
 
 if ($arrayid.version -ge [Version]"5.0.9" -or $arrayid.version -ge [Version]"5.1.3")
@@ -364,6 +365,22 @@ if ($arrayid.version -ge [Version]"5.0.9" -or $arrayid.version -ge [Version]"5.1
 }
 else
 {
-    Add-Content $logfile "[****NEEDS ATTENTION****] Purity version does not support VVols. Contact Pure Storage support to upgrade to Purity version 5.1.3 or later."
+    Add-Content $logfile "[****NEEDS ATTENTION****] Purity version d es not support VVols. Contact Pure Storage support to upgrade to Purity version 5.1.3 or later."
+}
+
+# Check TCP port 8084 reachability
+add-content $logfile "-------------------------------------------------------"
+add-content $logfile "Checking FlashArray Reachability on TCP port 8084"
+add-content $logfile "-------------------------------------------------------"
+
+$testNetConnection = Test-NetConnection -ComputerName $flasharray -informationlevel Quiet
+if (!$testNetConnection)
+{
+    Add-Content $logfile "[****NEEDS ATTENTION****] Could not communicate with NTP server. Check that it is valid and accessible."
+        
+}
+else
+{
+    Add-Content $logfile "NTP server is valid and accessible."
 }
 Disconnect-PfaArray -Array $array
