@@ -1,18 +1,20 @@
 <#
-*******Disclaimer:******************************************************
-This scripts are offered "as is" with no warranty.  While this
-scripts is tested and working in my environment, it is recommended that you test
-this script in a test lab before using in a production environment. Everyone can
-use the scripts/commands provided here without any written permission but I
-will not be liable for any damage or loss to the system.
+******************************Disclaimer********************************
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ************************************************************************
 
 This script will:
 -Check for VVols Readiness
 --Check for Purity 5.0.9+ or 5.1.3+
 --Check for vCenter 6.5+ and ESXI 6.5+ (6.5 Update 1 is highly recommended)
---Check for communication from vCenter and ESXi hosts to FlashArray on TCP port 8084
---Check that a NTP server is set, valid, daemon running on ESXi hosts and FlashArray
+--Check for communication from vCenter and ESXi hosts to FlashArray management ports on TCP port 8084
+--Check that a NTP server is set, valid, and daemon running on ESXi hosts and FlashArray
 
 
 All information logged to a file.
@@ -107,12 +109,11 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
     }
 }
 set-powercliconfiguration -invalidcertificateaction "ignore" -confirm:$false |out-null
-#if ((Get-PowerCLIVersion).build -lt 3737840)
-if ([Version](Get-Module -Name VMware.PowerCLI.version) -le [Version]"6.3.0.3737840")
+if ((Get-PowerCLIVersion).build -lt 3737840)
 {
     write-host "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)" -BackgroundColor Red
     write-host "Found the following build number:"
-    write-host Get-Module -Name VMware.PowerCLI.version
+    write-host (Get-Module -Name VMware.PowerCLI).version
     write-host "Terminating Script" -BackgroundColor Red
     write-host "Get it here: https://my.vmware.com/group/vmware/get-download?downloadGroup=PCLI630R1"
     add-content $logfile "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)"
@@ -242,17 +243,22 @@ write-host "Executing..."
 
 # Check vCenter version
 add-content $logfile "Working on the following vCenter: $($global:DefaultVIServers.name), version $($Global:DefaultVIServers.Version)"
-    add-content $logfile "-----------------------------------------------------------------------------------------------"
-    add-content $logfile "Checking vCenter Version"
-    add-content $logfile "-------------------------------------------------------"
-    if ($global:DefaultVIServers.version -le [Version]"6.5")
-    {
-        add-content $logfile "[****NEEDS ATTENTION****] vCenter 6.5 or later is required for VMware VVols."
-    }
-    else
-    {
-        add-content $logfile "Installed vCenter version, $($global:DefaultVIServers.version) supports VVols."
-    }
+add-content $logfile "-----------------------------------------------------------------------------------------------"
+add-content $logfile "Checking vCenter Version"
+add-content $logfile "-------------------------------------------------------"
+if ($global:DefaultVIServers.version -le [Version]"6.5")
+{
+    add-content $logfile "[****NEEDS ATTENTION****] vCenter 6.5 or later is required for VMware VVols."
+}
+else
+{
+    add-content $logfile "Installed vCenter version, $($global:DefaultVIServers.version) supports VVols."
+}
+
+add-content $logfile "-----------------------------------------------------------------------------------------------"
+add-content $logfile "vCSA NTP Notification"
+add-content $logfile "-------------------------------------------------------"
+add-content $logfile "[****NEEDS ATTENTION****] vCSA's NTP settings can't be checked remotely. Check VMware KB for manual process: https://kb.vmware.com/s/article/2113610."
 
 # Iterating through each host in the vCenter
 add-content $logfile "Iterating through all ESXi hosts in cluster $clusterName..."
@@ -323,7 +329,6 @@ foreach ($esx in $hosts)
         Add-Content $logfile "[****NEEDS ATTENTION****] NTP daemon is not running."
     }
 }
-Disconnect-VIServer -server $vcenter
 
 # Check FlashArray's NTP Settings
 $arrayid = Get-PfaArrayId -Array $array
@@ -365,7 +370,7 @@ if ($arrayid.version -ge [Version]"5.0.9" -or $arrayid.version -ge [Version]"5.1
 }
 else
 {
-    Add-Content $logfile "[****NEEDS ATTENTION****] Purity version d es not support VVols. Contact Pure Storage support to upgrade to Purity version 5.1.3 or later."
+    Add-Content $logfile "[****NEEDS ATTENTION****] Purity version does not support VVols. Contact Pure Storage support to upgrade to Purity version 5.1.3 or later."
 }
 
 # Check TCP port 8084 reachability
@@ -373,14 +378,16 @@ add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking FlashArray Reachability on TCP port 8084"
 add-content $logfile "-------------------------------------------------------"
 
-$testNetConnection = Test-NetConnection -ComputerName $flasharray -informationlevel Quiet
+$arrayNetworkInterfaces = Get-PfaNetworkInterfaces -array $array
+$testNetConnection = Test-NetConnection -ComputerName $flasharray -Port 8084 -InformationLevel Quiet
 if (!$testNetConnection)
 {
-    Add-Content $logfile "[****NEEDS ATTENTION****] Could not communicate with NTP server. Check that it is valid and accessible."
+    Add-Content $logfile "[****NEEDS ATTENTION****] Could not reach FlashArray on TCP port 8084."
         
 }
 else
 {
-    Add-Content $logfile "NTP server is valid and accessible."
+    Add-Content $logfile "FlashArray is reachable on TCP port 8084."
 }
 Disconnect-PfaArray -Array $array
+Disconnect-VIServer -server $vcenter
