@@ -40,7 +40,7 @@ function ChooseFolder([string]$Message, [string]$InitialDirectory)
     return $selectedDirectory
 }
 $logfolder = ChooseFolder -Message "Please select a log file directory" -InitialDirectory 'MyComputer'
-$logfile = $logfolder + '\' + (Get-Date -Format o |ForEach-Object {$_ -Replace ':', '.'}) + "checkvvols.log"
+$logfile = $logfolder + '\' + (Get-Date -Format o | ForEach-Object {$_ -Replace ':', '.'}) + "checkvvols.log"
 
 add-content $logfile '             __________________________'
 add-content $logfile '            /++++++++++++++++++++++++++\'
@@ -70,13 +70,13 @@ add-content $logfile '----------------------------------------------------------
 #Will try to install PowerCLI with PowerShellGet if PowerCLI is not present.
 
 if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)) -and (!(get-Module -Name VMware.PowerCLI -ListAvailable))) {
-    if (Test-Path C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù)
+    if (Test-Path C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1)
     {
-        C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 ù | out-null
+        C:\Program Files (x86)\VMware\Infrastructure\PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 | out-null
     }
-    elseif (Test-Path C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù)
+    elseif (Test-Path C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1)
     {
-        C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1ù | out-null
+        C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\Initialize-PowerCLIEnvironment.ps1 | out-null
     }
     elseif (!(get-Module -Name VMware.PowerCLI -ListAvailable))
     {
@@ -90,7 +90,7 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
             {
                 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -Confirm:$false
             }
-            Install-Module -Name VMware.PowerCLI  ìScope CurrentUser -Confirm:$false -Force"
+            Install-Module -Name VMware.PowerCLI Scope CurrentUser -Confirm:$false -Force"
         }
         else
         {
@@ -107,7 +107,7 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
         return
     }
 }
-set-powercliconfiguration -invalidcertificateaction "ignore" -confirm:$false |out-null
+set-powercliconfiguration -invalidcertificateaction "ignore" -confirm:$false | out-null
 if ((Get-PowerCLIVersion).build -lt 3737840)
 {
     write-host "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)" -BackgroundColor Red
@@ -117,7 +117,7 @@ if ((Get-PowerCLIVersion).build -lt 3737840)
     write-host "Get it here: https://my.vmware.com/group/vmware/get-download?downloadGroup=PCLI630R1"
     add-content $logfile "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)"
     add-content $logfile "Found the following build number:"
-    add-content $logfile Get-Module -Name (VMware.PowerCLI).version
+    add-content $logfile (Get-Module -Name VMware.PowerCLI).version
     add-content $logfile "Terminating Script"
     add-content $logfile "Get it here: https://my.vmware.com/web/vmware/details?downloadGroup=PCLI650R1&productId=614"
     return
@@ -163,7 +163,7 @@ if ($clusterChoice -ieq "y")
     $ClusterForm = New-Object System.Windows.Forms.Form
     $ClusterForm.width = 300
     $ClusterForm.height = 100
-    $ClusterForm.Text = "ùChoose a Cluster"
+    $ClusterForm.Text = "Choose a Cluster"
     $DropDown = new-object System.Windows.Forms.ComboBox
     $DropDown.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
     $DropDown.Location = new-object System.Drawing.Size(10,10)
@@ -299,7 +299,7 @@ foreach ($esx in $hosts)
         if (!$testNetConnection)
         {
             Add-Content $logfile "[****NEEDS ATTENTION****] Could not communicate with NTP server. Check that it is valid and accessible."
-        
+
         }
         else
         {
@@ -352,7 +352,7 @@ else
     if (!$testNetConnection)
     {
         Add-Content $logfile "[****NEEDS ATTENTION****] Could not communicate with NTP server. Check that it is valid and accessible."
-        
+
     }
     else
     {
@@ -385,7 +385,7 @@ $testNetConnection = Test-NetConnection -ComputerName $flasharray -Port 8084 -In
 if (!$testNetConnection)
 {
     Add-Content $logfile "[****NEEDS ATTENTION****] Could not reach FlashArray on TCP port 8084."
-        
+
 }
 else
 {
@@ -401,7 +401,7 @@ $hostGroups = Get-PfaHostGroups -Array $array
 if ($hostGroups.count -gt 0 -or $hostGroups.hosts.count -gt 0)
 {
     Add-Content $logfile "FlashArray has host groups set."
-    Add-Content $logfile "FlashArray has hosts set." 
+    Add-Content $logfile "FlashArray has hosts set."
 }
 else
 {
