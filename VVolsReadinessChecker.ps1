@@ -332,6 +332,7 @@ foreach ($esx in $hosts)
 
 # Check FlashArray's NTP Settings
 $arrayid = Get-PfaArrayId -Array $array
+add-content $logfile ""
 add-content $logfile "***********************************************************************************************"
 add-content $logfile "**********************************FLASHARRAY***************************************************"
 add-content $logfile "-----------------------------------------------------------------------------------------------"
@@ -408,5 +409,21 @@ else
     Add-Content $logfile "[****NEEDS ATTENTION****] FlashArray does not have any host or host groups configured."
 }
 
+# Check for replication
+add-content $logfile ""
+add-content $logfile "-------------------------------------------------------"
+add-content $logfile "Checking for Replication"
+add-content $logfile "-------------------------------------------------------"
+$pgroups = Get-PfaProtectionGroups -Array $array
+foreach ($pgroup in $pgroups)
+{
+    if ($pgroup.targets.count -ge 1)
+    {
+        Add-Content $logfile "[****NEEDS ATTENTION****] Protection Group $($pgroup.name) replicates to $($pgroup.targets.name). Run this script on the remote side before proceeding with VVols."
+    }
+    else
+    {
+        Add-Content $logfile "Replicated protection groups not found. Ok."
+}
 Disconnect-PfaArray -Array $array
 Disconnect-VIServer -server $vcenter
