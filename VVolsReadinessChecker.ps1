@@ -13,9 +13,9 @@ This script will:
 -Check for VVols Readiness
 --Check for Purity 5.0.9+ or 5.1.3+
 --Check for vCenter 6.5+ and ESXI 6.5+ (6.5 Update 1 is highly recommended)
---Check for communication from vCenter and ESXi hosts to FlashArray management ports on TCP port 8084
+--Check that FlashArray is accessible on TCP port 8084
 --Check that a NTP server is set, valid, and daemon running on ESXi hosts and FlashArray
-
+--Check for replication, remote side needs to meet above criteria too!
 
 All information logged to a file.
 
@@ -25,7 +25,6 @@ Supports:
 -FlashArray //m and //x
 -vCenter 6.5 and later
 -PowerCLI 6.3 R1 or later required
-
 
 #>
 
@@ -118,7 +117,7 @@ if ((Get-PowerCLIVersion).build -lt 3737840)
     write-host "Get it here: https://my.vmware.com/group/vmware/get-download?downloadGroup=PCLI630R1"
     add-content $logfile "This version of PowerCLI is too old, version 6.3 Release 1 or later is required (Build 3737840)"
     add-content $logfile "Found the following build number:"
-    add-content $logfile Get-Module -Name VMware.PowerCLI.version
+    add-content $logfile Get-Module -Name (VMware.PowerCLI).version
     add-content $logfile "Terminating Script"
     add-content $logfile "Get it here: https://my.vmware.com/web/vmware/details?downloadGroup=PCLI650R1&productId=614"
     return
@@ -160,7 +159,7 @@ if ($clusterChoice -ieq "y")
     [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
     [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
 
-    #create form to choose recovery cluster
+    #create form to choose cluster
     $ClusterForm = New-Object System.Windows.Forms.Form
     $ClusterForm.width = 300
     $ClusterForm.height = 100
