@@ -164,8 +164,7 @@ if ($clusterChoice -ieq "y")
     $ClusterForm = New-Object System.Windows.Forms.Form
     $ClusterForm.width = 300
     $ClusterForm.height = 100
-    $ClusterForm.Text =  ùChoose a Cluster ù
-
+    $ClusterForm.Text = "ùChoose a Cluster"
     $DropDown = new-object System.Windows.Forms.ComboBox
     $DropDown.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
     $DropDown.Location = new-object System.Drawing.Size(10,10)
@@ -175,7 +174,7 @@ if ($clusterChoice -ieq "y")
     {
         add-content $logfile "Terminating Script. No VMware cluster(s) found."
         write-host "No VMware cluster(s) found. Terminating Script" -BackgroundColor Red
-        disconnectServers
+        Disconnect-VIServer $vcenter
         return
     }
     ForEach ($cluster in $clusters) {
@@ -211,7 +210,7 @@ if ($clusterChoice -ieq "y")
     add-content $logfile "Selected cluster is $($clusterName)"
     add-content $logfile ""
     $cluster = get-cluster -Name $clusterName
-    $hosts= $cluster | get-vmhost
+    $hosts = $cluster | get-vmhost
     write-host ""
 }
 else
@@ -261,6 +260,7 @@ add-content $logfile "-------------------------------------------------------"
 add-content $logfile "[****NEEDS ATTENTION****] vCSA's NTP settings can't be checked remotely. Check VMware KB for manual process: https://kb.vmware.com/s/article/2113610."
 
 # Iterating through each host in the vCenter
+add-content $logfile ""
 add-content $logfile "Iterating through all ESXi hosts in cluster $clusterName..."
 $hosts | out-string | add-content $logfile
 foreach ($esx in $hosts)
@@ -360,6 +360,7 @@ else
     }
 }
 # Check Purity version
+add-content $logfile ""
 add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking Purity Version"
 add-content $logfile "-------------------------------------------------------"
@@ -374,6 +375,7 @@ else
 }
 
 # Check TCP port 8084 reachability
+add-content $logfile ""
 add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking FlashArray Reachability on TCP port 8084"
 add-content $logfile "-------------------------------------------------------"
@@ -389,5 +391,22 @@ else
 {
     Add-Content $logfile "FlashArray is reachable on TCP port 8084."
 }
+
+# Check for existance of hosts and host groups
+add-content $logfile ""
+add-content $logfile "-------------------------------------------------------"
+add-content $logfile "Checking for Hosts and Host Groups"
+add-content $logfile "-------------------------------------------------------"
+$hostGroups = Get-PfaHostGroups -Array $array
+if ($hostGroups.count -gt 0 -or $hostGroups.hosts.count -gt 0)
+{
+    Add-Content $logfile "FlashArray has host groups set."
+    Add-Content $logfile "FlashArray has hosts set." 
+}
+else
+{
+    Add-Content $logfile "[****NEEDS ATTENTION****] FlashArray does not have any host or host groups configured."
+}
+
 Disconnect-PfaArray -Array $array
 Disconnect-VIServer -server $vcenter
