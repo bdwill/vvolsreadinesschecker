@@ -1,7 +1,7 @@
 # Pure Storage VVols Readiness Checker
 
 This script will:
-* Check for Purity 5.0.9+ or 5.1.3+
+* Check for Purity 5.0.9+ or 5.1.5+
 * Check for vCenter 6.5+ and ESXi 6.5+
 * Check that FlashArray is accessible on tcp port 8084
 * Check that an NTP server is set, valid, and daemon running on ESXi hosts and that an NTP server is set and valid on FlashArray
