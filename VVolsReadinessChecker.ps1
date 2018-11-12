@@ -11,8 +11,8 @@ SOFTWARE.
 
 This script will:
 -Check for VVols Readiness
---Check for Purity 5.0.9+ or 5.1.3+
---Check for vCenter 6.5+ and ESXI 6.5+ (6.5 Update 1 is highly recommended)
+--Check for Purity 5.0.9+ or 5.1.5+
+--Check for vCenter 6.5+ and ESXi 6.5+ (6.5 Update 1 is highly recommended)
 --Check that FlashArray is accessible on TCP port 8084
 --Check that a NTP server is set, valid, and daemon running on ESXi hosts and FlashArray
 --Check for replication, remote side needs to meet above criteria too!
@@ -365,7 +365,7 @@ add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking Purity Version"
 add-content $logfile "-------------------------------------------------------"
 
-if ($arrayid.version -ge [Version]"5.0.9" -or $arrayid.version -ge [Version]"5.1.3")
+if ($arrayid.version -ge [Version]"5.0.9" -or $arrayid.version -ge [Version]"5.1.5")
 {
     Add-Content $logfile "Purity version supports VVols."
 }
