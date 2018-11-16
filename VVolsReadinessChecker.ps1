@@ -90,7 +90,7 @@ if ((!(Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)
             {
                 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -Confirm:$false
             }
-            Install-Module -Name VMware.PowerCLI Scope CurrentUser -Confirm:$false -Force"
+            Install-Module -Name VMware.PowerCLI Scope CurrentUser -Confirm:$false -Force
         }
         else
         {
