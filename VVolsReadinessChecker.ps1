@@ -337,6 +337,8 @@ add-content $logfile "**********************************FLASHARRAY**************
 add-content $logfile "-----------------------------------------------------------------------------------------------"
 add-content $logfile "Working on the following FlashArray: $($flasharray), Purity version $($arrayid.version)"
 add-content $logfile "-----------------------------------------------------------------------------------------------"
+add-content $logfile ""
+add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking NTP Setting"
 add-content $logfile "-------------------------------------------------------"
 $flashArrayNTP = Get-PfaNtpServers -Array $array
@@ -380,16 +382,21 @@ add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking FlashArray Reachability on TCP port 8084"
 add-content $logfile "-------------------------------------------------------"
 
-$arrayNetworkInterfaces = Get-PfaNetworkInterfaces -array $array
-$testNetConnection = Test-NetConnection -ComputerName $flasharray -Port 8084 -InformationLevel Quiet
-if (!$testNetConnection)
+$interfaces = get-pfanetworkinterfaces -array $array | Where-Object { $_.services -like "management" }  | where-object {$_.name -like "ct*"}
+$i = 0
+foreach ($interface in $interfaces)
 {
-    Add-Content $logfile "[****NEEDS ATTENTION****] Could not reach FlashArray on TCP port 8084."
+    $testNetConnection = Test-NetConnection -ComputerName $interfaces[$i].address -Port 8084 -InformationLevel Quiet
+    if (!$testNetConnection)
+    {
+        add-content $logfile "[****NEEDS ATTENTION****] Could not reach FlashArray management port $($interface.name), IP: $($interfaces[$i].address) on TCP port 8084."
 
-}
-else
-{
-    Add-Content $logfile "FlashArray is reachable on TCP port 8084."
+    }
+    else
+    {
+        add-content $logfile "FlashArray management port $($interface.name) is reachable on TCP port 8084."
+    }
+    $i += 1
 }
 
 # Check for existance of hosts and host groups
@@ -413,16 +420,18 @@ add-content $logfile ""
 add-content $logfile "-------------------------------------------------------"
 add-content $logfile "Checking for Replication"
 add-content $logfile "-------------------------------------------------------"
-$pgroups = Get-PfaProtectionGroups -Array $array
-foreach ($pgroup in $pgroups)
+$pgroups = Get-PfaProtectionGroups -Array $array | where-object {$_.targets.count -ge 1}
+if ($pgroups -eq $null)
 {
-    if ($pgroup.targets.count -ge 1)
+    Add-Content $logfile "Ok, no replicated protection groups found."
+}
+
+else
+{
+    foreach ($pgroup in $pgroups)
     {
         Add-Content $logfile "[****NEEDS ATTENTION****] Protection Group $($pgroup.name) replicates to $($pgroup.targets.name). Run this script on the remote side before proceeding with VVols."
     }
-    else
-    {
-        Add-Content $logfile "Replicated protection groups not found. Ok."
 }
 Disconnect-PfaArray -Array $array
 Disconnect-VIServer -server $vcenter
